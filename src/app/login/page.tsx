@@ -41,15 +41,26 @@ export default function LoginPage() {
         body: JSON.stringify({ idToken }),
       })
 
+      const body = await res.json()
+
       if (!res.ok) {
-        const body = await res.json()
         setServerError(body.error ?? 'Failed to establish session')
         return
       }
 
       router.push('/dashboard')
-    } catch {
-      setServerError('An unexpected error occurred')
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string }
+      const messages: Record<string, string> = {
+        'auth/user-not-found': 'No account found with this email',
+        'auth/wrong-password': 'Incorrect password',
+        'auth/invalid-credential': 'Incorrect email or password',
+        'auth/invalid-login-credentials': 'Incorrect email or password',
+        'auth/too-many-requests': 'Too many attempts. Please try again later.',
+        'auth/user-disabled': 'This account has been disabled',
+        'auth/invalid-email': 'Invalid email address',
+      }
+      setServerError(messages[e?.code ?? ''] ?? e?.message ?? 'Login failed. Please check your credentials.')
     }
   }
 

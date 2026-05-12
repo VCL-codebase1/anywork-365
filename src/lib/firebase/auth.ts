@@ -44,7 +44,7 @@ export async function signUp({
     return { data: authUser, user: cred.user, error: null }
   } catch (err: unknown) {
     const e = err as { code?: string; message?: string }
-    return { data: null, error: { message: e?.message || 'Signup failed' } }
+    return { data: null, error: { code: e?.code, message: e?.message || 'Signup failed' } }
   }
 }
 

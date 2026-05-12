@@ -1,16 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { signupSchema } from '@/lib/validators/auth'
 import { setSession } from '@/lib/auth'
 import { auth as adminAuth } from '@/lib/firebase/admin'
-import { createUser, createBusiness } from '@/lib/queries'
+import { createUser, createBusiness, getUserByUid } from '@/lib/queries'
+import { signupSchema } from '@/lib/validators/auth'
 import type { ApiResponse, AuthUser } from '@/types'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const parsed = signupSchema.safeParse(body)
+    const { idToken, ...profileData } = await req.json()
+    if (!idToken) {
+      return NextResponse.json<ApiResponse<null>>(
+        { success: false, error: 'ID token is required' },
+        { status: 400 }
+      )
+    }
+
+    const decoded = await adminAuth.verifyIdToken(idToken)
+    const uid = decoded.uid
+
+    const existing = await getUserByUid(uid)
+    if (existing) {
+      await setSession(existing)
+      return NextResponse.json<ApiResponse<AuthUser>>(
+        { success: true, data: existing, message: 'Account already exists, logged in' },
+        { status: 200 }
+      )
+    }
+
+    const parsed = signupSchema.safeParse(profileData)
     if (!parsed.success) {
       return NextResponse.json<ApiResponse<null>>(
         { success: false, error: parsed.error.errors[0].message },
@@ -18,17 +37,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { firstName, lastName, email, phone, password, role, city } = parsed.data
-
-    const userRecord = await adminAuth.createUser({
-      email,
-      password,
-      displayName: `${firstName} ${lastName}`,
-      phoneNumber: phone,
-    })
+    const { firstName, lastName, email, phone, role, city } = parsed.data
 
     await createUser({
-      uid: userRecord.uid,
+      uid,
       email,
       fullName: `${firstName} ${lastName}`,
       phoneNumber: phone,
@@ -37,7 +49,7 @@ export async function POST(req: NextRequest) {
 
     if (role === 'vendor') {
       await createBusiness({
-        uid: userRecord.uid,
+        uid,
         businessName: `${firstName} ${lastName}`,
         businessContact: phone,
         state: city || 'Lagos',
@@ -45,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     const authUser: AuthUser = {
-      id: userRecord.uid,
+      id: uid,
       email,
       firstName,
       lastName,
@@ -63,9 +75,8 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const e = err as { code?: string; message?: string }
     console.error('[AUTH SIGNUP]', e)
-    let message = 'Internal server error'
-    if (e?.code === 'auth/email-already-exists') message = 'An account with this email already exists'
-    else if (e?.message) message = e.message
+    let message = 'Signup failed'
+    if (e?.message) message = e.message
 
     return NextResponse.json<ApiResponse<null>>(
       { success: false, error: message },

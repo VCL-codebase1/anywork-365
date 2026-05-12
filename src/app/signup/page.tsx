@@ -47,27 +47,34 @@ export default function SignupPage() {
       })
 
       if (error || !result || !fbUser) {
-        setServerError(error?.message ?? 'Signup failed')
+        const messages: Record<string, string> = {
+          'auth/email-already-in-use': 'An account with this email already exists',
+          'auth/weak-password': 'Password is too weak. Use at least 6 characters.',
+          'auth/invalid-email': 'Invalid email address',
+        }
+        setServerError(messages[error?.code ?? ''] ?? error?.message ?? 'Signup failed')
         return
       }
 
       const idToken = await fbUser.getIdToken()
 
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, ...data }),
       })
 
+      const body = await res.json()
+
       if (!res.ok) {
-        const body = await res.json()
-        setServerError(body.error ?? 'Failed to establish session')
+        setServerError(body.error ?? 'Failed to complete signup')
         return
       }
 
       router.push('/dashboard')
-    } catch {
-      setServerError('An unexpected error occurred')
+    } catch (err: unknown) {
+      const e = err as { code?: string; message?: string }
+      setServerError(e?.message ?? 'An unexpected error occurred')
     }
   }
 
