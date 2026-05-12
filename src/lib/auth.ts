@@ -73,11 +73,12 @@ export async function clearSession(): Promise<void> {
 }
 
 export async function getFirebaseIdToken(): Promise<string | null> {
-  const { auth } = await import('@/lib/firebase/client')
-  if (!auth) return null
-  const user = auth.currentUser
-  if (!user) return null
   try {
+    const { getFirebaseAuth } = await import('@/lib/firebase/client')
+    const auth = getFirebaseAuth()
+    if (!auth) return null
+    const user = auth.currentUser
+    if (!user) return null
     return await user.getIdToken()
   } catch {
     return null
