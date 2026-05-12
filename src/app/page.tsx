@@ -234,7 +234,7 @@ export default function HomePage() {
               </h2>
             </div>
             <Link href="/professionals" className="text-sm font-medium text-brand-primary hover:underline">
-              View all \u2192
+              View all →
             </Link>
           </div>
 
@@ -265,7 +265,7 @@ export default function HomePage() {
               </h2>
             </div>
             <Link href="/professionals" className="text-sm font-medium text-brand-primary hover:underline">
-              View all \u2192
+              View all →
             </Link>
           </div>
 
@@ -349,7 +349,7 @@ export default function HomePage() {
               </h2>
             </div>
             <Link href="/professionals" className="text-sm font-medium text-brand-primary hover:underline">
-              View all \u2192
+              View all →
             </Link>
           </div>
 
@@ -408,7 +408,7 @@ export default function HomePage() {
               </h2>
             </div>
             <Link href="/jobs" className="text-sm font-medium text-brand-primary hover:underline">
-              View all \u2192
+              View all →
             </Link>
           </div>
 

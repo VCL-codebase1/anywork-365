@@ -2,9 +2,12 @@ import mysql from 'mysql2/promise'
 
 export type SqlValue = string | number | boolean | Date | null | Buffer
 
-const sslConfig = process.env.MYSQL_SSL === 'true'
-  ? { ssl: { rejectUnauthorized: true } }
-  : {}
+const sslMode = process.env.MYSQL_SSL || ''
+const sslConfig = sslMode === 'skip-verify'
+  ? { ssl: { rejectUnauthorized: false } }
+  : sslMode === 'true'
+    ? { ssl: { rejectUnauthorized: true } }
+    : {}
 
 const pool = mysql.createPool({
   host: process.env.MYSQL_HOST || 'localhost',
