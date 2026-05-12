@@ -3,6 +3,7 @@ import {
   signInWithEmailAndPassword,
   signOut as fSignOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updatePassword as fUpdatePassword,
   onAuthStateChanged,
   User,
@@ -41,11 +42,41 @@ export async function signUp({
   const fbAuth = requireFirebase()
   try {
     const cred = await createUserWithEmailAndPassword(fbAuth, email, password)
+
+    await sendEmailVerification(cred.user)
+
     const authUser: AuthUser = { id: cred.user.uid, email, firstName: '', lastName: '', role: 'client' }
     return { data: authUser, user: cred.user, error: null }
   } catch (err: unknown) {
     const e = err as { code?: string; message?: string }
     return { data: null, error: { code: e?.code, message: e?.message || 'Signup failed' } }
+  }
+}
+
+export async function sendVerificationEmail(): Promise<{ error: string | null }> {
+  const fbAuth = requireFirebase()
+  const user = fbAuth.currentUser
+  if (!user) return { error: 'Not authenticated' }
+  try {
+    await sendEmailVerification(user)
+    return { error: null }
+  } catch (err: unknown) {
+    const e = err as { message?: string }
+    return { error: e?.message || 'Failed to send verification email' }
+  }
+}
+
+export async function reloadUser(): Promise<{ emailVerified: boolean; error: string | null }> {
+  const fbAuth = requireFirebase()
+  const user = fbAuth.currentUser
+  if (!user) return { emailVerified: false, error: 'Not authenticated' }
+  try {
+    await user.reload()
+    const refreshed = fbAuth.currentUser
+    return { emailVerified: refreshed?.emailVerified ?? false, error: null }
+  } catch (err: unknown) {
+    const e = err as { message?: string }
+    return { emailVerified: false, error: e?.message || 'Failed to reload user' }
   }
 }
 

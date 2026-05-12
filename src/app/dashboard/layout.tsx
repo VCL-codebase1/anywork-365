@@ -1,7 +1,15 @@
+import { redirect } from 'next/navigation'
+import { getSession } from '@/lib/auth'
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar'
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav'
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession()
+
+  if (session && !session.emailVerified) {
+    redirect('/verify-email')
+  }
+
   return (
     <div className="flex min-h-[calc(100dvh-64px)]">
       {/* Sidebar — desktop only */}

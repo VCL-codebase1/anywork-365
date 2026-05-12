@@ -38,6 +38,7 @@ export interface AuthUser {
   city?: string
   bio?: string
   avatarUrl?: string
+  emailVerified?: boolean
   id: string
   email: string
   firstName: string

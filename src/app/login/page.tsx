@@ -48,6 +48,11 @@ export default function LoginPage() {
         return
       }
 
+      if (!result.user.emailVerified) {
+        router.push('/verify-email')
+        return
+      }
+
       router.push('/dashboard')
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string }

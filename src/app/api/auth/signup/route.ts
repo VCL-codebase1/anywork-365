@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { firstName, lastName, email, phone, countryCode, nin, role, city } = parsed.data
+    const { firstName, lastName, email, phone, nin, role, city } = parsed.data
 
     await createUser({
       uid,
       email,
       fullName: `${firstName} ${lastName}`,
-      phoneNumber: `${countryCode}${phone}`,
+      phoneNumber: phone,
       state: city || 'Lagos',
       nin,
     })

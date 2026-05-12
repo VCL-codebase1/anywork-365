@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/ui'
 import { formatCurrency } from '@/lib/utils'
-import { useCurrentUser, getInitialsFromUser } from '@/hooks/useCurrentUser'
+import { useCurrentUser } from '@/hooks/useCurrentUser'
 import type { Job } from '@/types'
 
 interface Metric {

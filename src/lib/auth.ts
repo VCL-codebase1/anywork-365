@@ -64,7 +64,13 @@ export async function getSession(): Promise<AuthUser | null> {
   const decoded = await verifySessionCookie(sessionCookie)
   if (!decoded) return null
 
-  return getUserFromFirebase(decoded.uid)
+  const user = await getUserFromFirebase(decoded.uid)
+  if (!user) return null
+
+  return {
+    ...user,
+    emailVerified: decoded.email_verified ?? false,
+  }
 }
 
 export async function clearSession(): Promise<void> {

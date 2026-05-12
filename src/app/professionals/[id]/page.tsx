@@ -17,6 +17,8 @@ export default function ProDetailPage({ params }: { params: Promise<{ id: string
   const [loading, setLoading] = useState(true)
   const [bookOpen, setBookOpen] = useState(false)
   const [booked,   setBooked]   = useState(false)
+  const [bookingError, setBookingError] = useState('')
+  const [bookingLoading, setBookingLoading] = useState(false)
   const [startingChat, setStartingChat] = useState(false)
   const [calling, setCalling] = useState<'voice' | 'video' | null>(null)
   const [quickConnecting, setQuickConnecting] = useState(false)
@@ -39,10 +41,42 @@ export default function ProDetailPage({ params }: { params: Promise<{ id: string
 
   const initials    = getInitials(pro.firstName, pro.lastName)
 
-  function handleBook(e: React.FormEvent) {
+  async function handleBook(e: React.FormEvent) {
     e.preventDefault()
-    setBookOpen(false)
-    setBooked(true)
+    if (!pro) return
+
+    setBookingError('')
+    setBookingLoading(true)
+    const form = e.currentTarget as HTMLFormElement
+    const formData = new FormData(form)
+
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendorId: pro.id,
+          description: formData.get('description'),
+          budget: parseInt(formData.get('budget') as string, 10),
+          date: formData.get('date'),
+          location: formData.get('location'),
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setBookingError(data.error || 'Failed to create booking')
+        setBookingLoading(false)
+        return
+      }
+
+      setBookOpen(false)
+      setBooked(true)
+    } catch {
+      setBookingError('Network error. Please try again.')
+    } finally {
+      setBookingLoading(false)
+    }
   }
 
   async function handleStartChat() {
@@ -365,11 +399,17 @@ function handleCall(type: 'voice' | 'video') {
         </div>
       </div>
 
-      <Modal open={bookOpen} onClose={() => setBookOpen(false)} title={`Book ${pro.firstName} ${pro.lastName}`}>
+      <Modal open={bookOpen} onClose={() => { setBookOpen(false); setBookingError('') }} title={`Book ${pro.firstName} ${pro.lastName}`}>
         <form onSubmit={handleBook}>
+          {bookingError && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl mb-4">
+              {bookingError}
+            </div>
+          )}
           <div className="form-group">
             <label className="label">Describe your job *</label>
             <textarea
+              name="description"
               className="input-field resize-y"
               rows={4}
               required
@@ -379,20 +419,22 @@ function handleCall(type: 'voice' | 'video') {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="form-group">
               <label className="label">Your Budget (₦)</label>
-              <input type="number" inputMode="numeric" className="input-field" min={1000} placeholder="50000" />
+              <input name="budget" type="number" inputMode="numeric" className="input-field" min={1000} placeholder="50000" required />
             </div>
             <div className="form-group">
               <label className="label">Preferred Date</label>
-              <input type="date" className="input-field" min={new Date().toISOString().split('T')[0]} />
+              <input name="date" type="date" className="input-field" min={new Date().toISOString().split('T')[0]} required />
             </div>
           </div>
           <div className="form-group">
             <label className="label">Your Location</label>
-            <input type="text" className="input-field" placeholder="e.g. Lekki Phase 1, Lagos" />
+            <input name="location" type="text" className="input-field" placeholder="e.g. Lekki Phase 1, Lagos" />
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-end mt-6">
-            <button type="button" onClick={() => setBookOpen(false)} className="btn-ghost w-full sm:w-auto px-6 justify-center">Cancel</button>
-            <button type="submit" className="btn-primary w-full sm:w-auto px-8 justify-center">Send Request</button>
+            <button type="button" onClick={() => { setBookOpen(false); setBookingError('') }} className="btn-ghost w-full sm:w-auto px-6 justify-center">Cancel</button>
+            <button type="submit" disabled={bookingLoading} className="btn-primary w-full sm:w-auto px-8 justify-center">
+              {bookingLoading ? 'Sending...' : 'Send Request'}
+            </button>
           </div>
         </form>
       </Modal>

@@ -1,0 +1,100 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getSession } from '@/lib/auth'
+import { getBookingById } from '@/lib/queries'
+import type { ApiResponse } from '@/types'
+
+export const runtime = 'nodejs'
+
+export async function POST(req: NextRequest) {
+  const session = await getSession()
+  if (!session) {
+    return NextResponse.json<ApiResponse<null>>(
+      { success: false, error: 'Authentication required' },
+      { status: 401 }
+    )
+  }
+
+  const { bookingId, rating, comment } = await req.json()
+
+  if (!bookingId || !rating || !comment?.trim()) {
+    return NextResponse.json<ApiResponse<null>>(
+      { success: false, error: 'Missing required fields: bookingId, rating, comment' },
+      { status: 400 }
+    )
+  }
+
+  const numRating = Number(rating)
+  if (!Number.isInteger(numRating) || numRating < 1 || numRating > 5) {
+    return NextResponse.json<ApiResponse<null>>(
+      { success: false, error: 'Rating must be an integer between 1 and 5' },
+      { status: 400 }
+    )
+  }
+
+  const booking = await getBookingById(Number(bookingId))
+  if (!booking) {
+    return NextResponse.json<ApiResponse<null>>(
+      { success: false, error: 'Booking not found' },
+      { status: 404 }
+    )
+  }
+
+  if (booking.clientUID !== session.id) {
+    return NextResponse.json<ApiResponse<null>>(
+      { success: false, error: 'Only the client who made this booking can leave a review' },
+      { status: 403 }
+    )
+  }
+
+  if (booking.bookingStatus !== 'Closed') {
+    return NextResponse.json<ApiResponse<null>>(
+      { success: false, error: 'You can only review completed bookings' },
+      { status: 400 }
+    )
+  }
+
+  const { execute, query } = await import('@/lib/db')
+
+  const existing = await query<any[]>(
+    'SELECT reviewId FROM reviews WHERE businessId = ? AND userUid = ? LIMIT 1',
+    [booking.businessId, session.id]
+  )
+  if (existing.length > 0) {
+    return NextResponse.json<ApiResponse<null>>(
+      { success: false, error: 'You have already reviewed this vendor for this booking' },
+      { status: 409 }
+    )
+  }
+
+  await execute(
+    `INSERT INTO reviews (businessId, userUid, review, dateAdded) VALUES (?, ?, ?, NOW())`,
+    [booking.businessId, session.id, comment.trim()]
+  )
+
+  await execute(
+    `INSERT INTO business_ratings (userUid, businessId, rating) VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE rating = ?`,
+    [session.id, booking.businessId, numRating, numRating]
+  )
+
+  const avgRows = await query<any[]>(
+    'SELECT AVG(rating) AS avg, COUNT(*) AS cnt FROM business_ratings WHERE businessId = ?',
+    [booking.businessId]
+  )
+  const avg = avgRows[0]?.avg ?? 0
+  const cnt = avgRows[0]?.cnt ?? 0
+
+  await execute(
+    'UPDATE businesses SET rating = ?, reviews = ? WHERE businessId = ?',
+    [Math.round(avg * 10) / 10, cnt, booking.businessId]
+  )
+
+  return NextResponse.json<ApiResponse<any>>(
+    {
+      success: true,
+      data: { businessId: booking.businessId, rating: numRating, comment: comment.trim() },
+      message: 'Review submitted successfully!',
+    },
+    { status: 201 }
+  )
+}

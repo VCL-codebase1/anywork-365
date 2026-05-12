@@ -6,7 +6,17 @@ import type { Job } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
-export default async function MyJobsPage() {
+const TABS = ['active', 'completed'] as const
+type Tab = (typeof TABS)[number]
+
+export default async function MyJobsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
+  const { tab: rawTab } = await searchParams
+  const currentTab: Tab = TABS.includes(rawTab as Tab) ? (rawTab as Tab) : 'active'
+
   const vacancies = await listVacancies()
   const ids = vacancies.map((v) => v.company_id).filter(Boolean)
 
@@ -40,9 +50,9 @@ export default async function MyJobsPage() {
     }
   })
 
-  const activeJobs = jobs.filter((j) => j.status === 'open')
-  const pendingJobs: Job[] = []
-  const completedJobs = jobs.filter((j) => j.status === 'completed')
+  const filtered = currentTab === 'active'
+    ? jobs.filter((j) => j.status === 'open')
+    : jobs.filter((j) => j.status === 'completed')
 
   return (
     <>
@@ -55,28 +65,25 @@ export default async function MyJobsPage() {
       </div>
 
       <div className="flex gap-0 border-b border-ui-border mb-5 overflow-x-auto scrollbar-none">
-        {[
-          `Active (${activeJobs.length})`,
-          `Pending (${pendingJobs.length})`,
-          `Completed (${completedJobs.length})`,
-        ].map((tab, i) => (
-          <button
+        {TABS.map((tab) => (
+          <Link
             key={tab}
-            className={`px-4 sm:px-5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap flex-shrink-0 ${
-              i === 0
+            href={`/dashboard/jobs?tab=${tab}`}
+            className={`px-4 sm:px-5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap flex-shrink-0 capitalize ${
+              tab === currentTab
                 ? 'border-brand-primary text-brand-primary'
                 : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
           >
-            {tab}
-          </button>
+            {tab} ({jobs.filter((j) => tab === 'active' ? j.status === 'open' : j.status === 'completed').length})
+          </Link>
         ))}
       </div>
 
       <div className="flex flex-col gap-3 sm:gap-4">
-        {jobs.length === 0 ? (
-          <p className="text-sm text-text-secondary py-8 text-center">No jobs posted yet</p>
-        ) : jobs.map((job) => (
+        {filtered.length === 0 ? (
+          <p className="text-sm text-text-secondary py-8 text-center">No {currentTab} jobs</p>
+        ) : filtered.map((job) => (
           <JobCard key={job.id} job={job} showApply={false} />
         ))}
       </div>
