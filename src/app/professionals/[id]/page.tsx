@@ -101,7 +101,7 @@ export default function ProDetailPage({ params }: { params: Promise<{ id: string
     }
   }
 
-function handleCall(type: 'voice' | 'video') {
+  function handleCall(type: 'voice' | 'video') {
     if (!pro?.phone) {
       alert('This vendor has not shared their phone number')
       return
@@ -111,14 +111,14 @@ function handleCall(type: 'voice' | 'video') {
     
     setTimeout(() => {
       try {
-        const phoneNumber = formatPhoneForWhatsApp(phone)
+        const digits = phone.replace(/\D/g, '')
         let url: string
         
         if (type === 'video') {
           const message = encodeURIComponent(`Hi ${pro.firstName}, I'd like a video call`)
-          url = `https://wa.me/${phoneNumber.replace('+', '')}?text=${message}`
+          url = `https://wa.me/${digits}?text=${message}`
         } else {
-          url = `tel:${phoneNumber}`
+          url = `tel:${phone}`
         }
         
         window.open(url, '_blank', 'noopener,noreferrer')
@@ -128,14 +128,6 @@ function handleCall(type: 'voice' | 'video') {
         setCalling(null)
       }
     }, 300)
-  }
-
-  function formatPhoneForWhatsApp(phone: string): string {
-    let cleaned = phone.replace(/\D/g, '')
-    if (cleaned.startsWith('0')) {
-      cleaned = cleaned.substring(1)
-    }
-    return '+234' + cleaned
   }
 
   function handleQuickConnect() {
@@ -148,11 +140,11 @@ function handleCall(type: 'voice' | 'video') {
     
     setTimeout(() => {
       try {
-        const phoneNumber = formatPhoneForWhatsApp(phone)
+        const digits = phone.replace(/\D/g, '')
         const message = encodeURIComponent(`Hi ${pro.firstName}, I found your profile on Anywork365 and I'm interested in your services. Can we discuss?`)
-        const url = `https://wa.me/${phoneNumber.replace('+', '')}?text=${message}`
+        const url = `https://wa.me/${digits}?text=${message}`
         
-        const whatsappWebUrl = `https://web.whatsapp.com/send?phone=${phoneNumber.replace('+', '')}&text=${message}`
+        const whatsappWebUrl = `https://web.whatsapp.com/send?phone=${digits}&text=${message}`
         
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
         
