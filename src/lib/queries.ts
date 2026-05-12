@@ -305,8 +305,8 @@ export async function createUser(data: {
   nin?: string
 }): Promise<void> {
   await execute(
-    `INSERT INTO users (uid, email, fullName, phoneNumber, state, nin, loginProvider, dateJoined)
-     VALUES (?, ?, ?, ?, ?, ?, 'EmailAndPassword', NOW())`,
+    `INSERT INTO users (uid, email, fullName, phoneNumber, state, nin, dateJoined)
+     VALUES (?, ?, ?, ?, ?, ?, NOW())`,
     [data.uid, data.email, data.fullName, data.phoneNumber, data.state || '', data.nin || null]
   )
 }

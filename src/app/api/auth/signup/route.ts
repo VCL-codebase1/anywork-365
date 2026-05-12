@@ -37,14 +37,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { firstName, lastName, email, phone, role, city } = parsed.data
+    const { firstName, lastName, email, phone, countryCode, nin, role, city } = parsed.data
 
     await createUser({
       uid,
       email,
       fullName: `${firstName} ${lastName}`,
-      phoneNumber: phone,
+      phoneNumber: `${countryCode}${phone}`,
       state: city || 'Lagos',
+      nin,
     })
 
     if (role === 'vendor') {
