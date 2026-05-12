@@ -385,7 +385,7 @@ export default function HomePage() {
                 <p className="text-xs text-text-secondary line-clamp-1 mb-2">{vendor.city}</p>
                 {vendor.rating && (
                   <div className="flex items-center justify-center gap-1 text-xs">
-                    <span className="text-amber-500">\u2605</span>
+                    <span className="text-amber-500">★</span>
                     <span className="font-medium text-text-primary">{vendor.rating}</span>
                     <span className="text-text-secondary">({vendor.reviewCount})</span>
                   </div>

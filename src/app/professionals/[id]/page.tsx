@@ -220,7 +220,7 @@ function handleCall(type: 'voice' | 'video') {
                     {pro.firstName} {pro.lastName}
                   </h1>
                 </div>
-                <p className="text-sm text-text-secondary mt-0.5">{pro.skills?.[0]} \u00B7 {pro.city}</p>
+                <p className="text-sm text-text-secondary mt-0.5">{pro.skills?.[0]} · {pro.city}</p>
                 {pro.rating && (
                   <div className="mt-2">
                     <Stars rating={pro.rating} count={pro.reviewCount} />
@@ -358,7 +358,7 @@ function handleCall(type: 'voice' | 'video') {
 
           {pro.isVerified && (
             <div className="card-sm bg-brand-light border-brand-primary/20">
-              <p className="text-sm font-medium text-brand-active mb-1">\u2713 Verified Vendor</p>
+              <p className="text-sm font-medium text-brand-active mb-1">✓ Verified Vendor</p>
               <p className="text-xs text-brand-active/70">Identity and credentials verified by Anywork365</p>
             </div>
           )}
@@ -378,7 +378,7 @@ function handleCall(type: 'voice' | 'video') {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="form-group">
-              <label className="label">Your Budget (\u20A6)</label>
+              <label className="label">Your Budget (₦)</label>
               <input type="number" inputMode="numeric" className="input-field" min={1000} placeholder="50000" />
             </div>
             <div className="form-group">
