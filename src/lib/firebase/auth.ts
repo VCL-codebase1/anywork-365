@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
   User,
 } from 'firebase/auth'
-import { auth } from './client'
+import { getFirebaseAuth } from './client'
 import type { AuthUser, UserRole } from '@/types'
 
 export type VerificationTier = 'basic' | 'verified' | 'premium'
@@ -24,13 +24,14 @@ export interface SignUpData {
 }
 
 function requireFirebase() {
-  if (!auth) {
+  const fb = getFirebaseAuth()
+  if (!fb) {
     throw new Error(
       'Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_API_KEY, ' +
         'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN, and NEXT_PUBLIC_FIREBASE_PROJECT_ID in .env.local'
     )
   }
-  return auth
+  return fb
 }
 
 export async function signUp({

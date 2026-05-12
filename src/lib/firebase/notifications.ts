@@ -1,15 +1,15 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import app from './client'
+import { getFirebaseApp } from './client'
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging'
 import { saveFcmToken } from '@/lib/queries'
 
 let messagingInstance: Messaging | null = null
 
-if (typeof window !== 'undefined' && app) {
+if (typeof window !== 'undefined') {
   try {
-    messagingInstance = getMessaging(app)
+    messagingInstance = getMessaging(getFirebaseApp())
   } catch {
     // Firebase messaging not available in this environment
   }

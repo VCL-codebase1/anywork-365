@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import app from '@/lib/firebase/client'
+import { getFirebaseApp } from '@/lib/firebase/client'
 import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging'
 import { saveFcmToken, deleteFcmToken } from '@/lib/queries'
 
 let messaging: Messaging | null = null
 try {
-  if (typeof window !== 'undefined' && app) {
-    messaging = getMessaging(app)
+  if (typeof window !== 'undefined') {
+    messaging = getMessaging(getFirebaseApp())
   }
 } catch {
   messaging = null
