@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Badge } from '@/components/ui'
-import { formatCurrency } from '@/lib/utils'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
-import type { Job } from '@/types'
 
 interface Metric {
   label: string
@@ -23,7 +20,6 @@ interface ActivityItem {
 
 export default function DashboardPage() {
   const { user, loading } = useCurrentUser()
-  const [recentJobs, setRecentJobs] = useState<Job[]>([])
   const [metrics, setMetrics] = useState<Metric[]>([
     { label: 'Active Jobs',    value: '—', change: 'Loading...' },
     { label: 'Applications',   value: '—', change: 'Loading...' },
@@ -32,15 +28,6 @@ export default function DashboardPage() {
   ])
   const [activity, setActivity] = useState<ActivityItem[]>([])
   const [dashboardLoading, setDashboardLoading] = useState(true)
-
-  useEffect(() => {
-    fetch('/api/jobs?limit=3')
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.success) setRecentJobs(res.data)
-      })
-      .catch(() => {})
-  }, [])
 
   useEffect(() => {
     if (loading || !user) return
@@ -83,51 +70,26 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Activity + Active Jobs */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <div className="card">
-          <h2 className="font-medium text-base mb-4">Recent Activity</h2>
-          <div className="divide-y divide-ui-border">
-            {dashboardLoading ? (
-              <p className="text-sm text-text-secondary py-4 text-center">Loading activity...</p>
-            ) : activity.length === 0 ? (
-              <p className="text-sm text-text-secondary py-4 text-center">No recent activity</p>
-            ) : activity.map((a, i) => (
-              <div key={i} className="flex items-start gap-3 py-3">
-                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden ${a.color}`}>
-                  <span className="leading-none">{a.initials}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-text-primary leading-snug">{a.text}</p>
-                  <p className="text-xs text-text-secondary mt-0.5">{a.sub}</p>
-                </div>
-                <p className="text-xs text-text-secondary whitespace-nowrap">{a.time}</p>
+      {/* Recent Activity — full width */}
+      <div className="card">
+        <h2 className="font-medium text-base mb-4">Recent Activity</h2>
+        <div className="divide-y divide-ui-border">
+          {dashboardLoading ? (
+            <p className="text-sm text-text-secondary py-4 text-center">Loading activity...</p>
+          ) : activity.length === 0 ? (
+            <p className="text-sm text-text-secondary py-4 text-center">No recent activity</p>
+          ) : activity.map((a, i) => (
+            <div key={i} className="flex items-start gap-3 py-3">
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden ${a.color}`}>
+                <span className="leading-none">{a.initials}</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-medium text-base">Active Jobs</h2>
-            <Link href="/dashboard/jobs" className="text-xs text-brand-primary hover:underline">View all</Link>
-          </div>
-          <div className="divide-y divide-ui-border">
-            {recentJobs.length === 0 ? (
-              <p className="text-sm text-text-secondary py-4 text-center">No active jobs yet</p>
-            ) : recentJobs.map((job) => (
-              <div key={job.id} className="py-3">
-                <p className="text-sm font-medium text-text-primary leading-snug">{job.title}</p>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <Badge variant="green">Open</Badge>
-                  <span className="text-xs text-text-secondary">{job.city}</span>
-                  <span className="text-xs font-semibold text-brand-primary ml-auto">
-                    {formatCurrency(job.budget)}
-                  </span>
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-text-primary leading-snug">{a.text}</p>
+                <p className="text-xs text-text-secondary mt-0.5">{a.sub}</p>
               </div>
-            ))}
-          </div>
+              <p className="text-xs text-text-secondary whitespace-nowrap">{a.time}</p>
+            </div>
+          ))}
         </div>
       </div>
 
