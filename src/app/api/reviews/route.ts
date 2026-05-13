@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
 import { getBookingById } from '@/lib/queries'
 import type { ApiResponse } from '@/types'
+import type { RowDataPacket } from 'mysql2'
 
 export const runtime = 'nodejs'
 
@@ -55,7 +56,8 @@ export async function POST(req: NextRequest) {
 
   const { execute, query } = await import('@/lib/db')
 
-  const existing = await query<any[]>(
+  interface ReviewIdRow extends RowDataPacket { reviewId: number }
+  const existing = await query<ReviewIdRow[]>(
     'SELECT reviewId FROM reviews WHERE businessId = ? AND userUid = ? LIMIT 1',
     [booking.businessId, session.id]
   )
@@ -77,7 +79,8 @@ export async function POST(req: NextRequest) {
     [session.id, booking.businessId, numRating, numRating]
   )
 
-  const avgRows = await query<any[]>(
+  interface AvgRow extends RowDataPacket { avg: number | null; cnt: number }
+  const avgRows = await query<AvgRow[]>(
     'SELECT AVG(rating) AS avg, COUNT(*) AS cnt FROM business_ratings WHERE businessId = ?',
     [booking.businessId]
   )

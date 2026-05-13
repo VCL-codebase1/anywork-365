@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth'
 import { query } from '@/lib/db'
 import { jobPostSchema } from '@/lib/validators/job'
 import type { ApiResponse, Job } from '@/types'
+import type { RowDataPacket } from 'mysql2'
 
 export const runtime = 'nodejs'
 
@@ -20,7 +21,12 @@ export async function GET(req: NextRequest) {
 
   const companyMap: Record<number, { name: string; address: string }> = {}
   if (ids.length > 0) {
-    const companies = await query<any[]>('SELECT company_id, company_name, company_address FROM companies WHERE company_id IN (' + ids.join(',') + ')')
+    interface CompanyRow extends RowDataPacket {
+      company_id: number
+      company_name: string
+      company_address: string | null
+    }
+    const companies = await query<CompanyRow[]>('SELECT company_id, company_name, company_address FROM companies WHERE company_id IN (' + ids.join(',') + ')')
     for (const c of companies) {
       companyMap[c.company_id] = { name: c.company_name, address: c.company_address || '' }
     }

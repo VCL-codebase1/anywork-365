@@ -137,6 +137,22 @@ interface VacancyApplicationRow extends RowDataPacket {
   applied_date: string
 }
 
+interface CountRow extends RowDataPacket {
+  c: number
+}
+
+interface BookingActivityRow extends RowDataPacket {
+  bookingId: number
+  businessId: number
+  clientUID: string
+  bookingStatus: string
+  additionalInfo: string | null
+  bookedDate: string | null
+  dateBooked: string
+  fullName?: string
+  businessName?: string
+}
+
 interface CompanyRow extends RowDataPacket {
   company_id: number
   uid: string
@@ -727,10 +743,10 @@ export async function getDashboardStats(uid: string, role: string): Promise<Dash
   const business = role === 'vendor' ? await getBusinessByUid(uid) : null
 
   if (business) {
-    const [activeJobs] = await query<any[]>('SELECT COUNT(*) AS c FROM vacancies WHERE company_id = ? AND closed = 0', [business.businessId])
-    const [apps] = await query<any[]>('SELECT COUNT(*) AS c FROM bookings WHERE businessId = ?', [business.businessId])
-    const [hired] = await query<any[]>("SELECT COUNT(*) AS c FROM bookings WHERE businessId = ? AND bookingStatus = 'Confirmed'", [business.businessId])
-    const [done] = await query<any[]>("SELECT COUNT(*) AS c FROM bookings WHERE businessId = ? AND bookingStatus = 'Closed'", [business.businessId])
+    const [activeJobs] = await query<CountRow[]>('SELECT COUNT(*) AS c FROM vacancies WHERE company_id = ? AND closed = 0', [business.businessId])
+    const [apps] = await query<CountRow[]>('SELECT COUNT(*) AS c FROM bookings WHERE businessId = ?', [business.businessId])
+    const [hired] = await query<CountRow[]>('SELECT COUNT(*) AS c FROM bookings WHERE businessId = ? AND bookingStatus = ?', [business.businessId, 'Confirmed'])
+    const [done] = await query<CountRow[]>('SELECT COUNT(*) AS c FROM bookings WHERE businessId = ? AND bookingStatus = ?', [business.businessId, 'Closed'])
     return {
       activeJobs: Number(activeJobs.c),
       applications: Number(apps.c),
@@ -739,9 +755,9 @@ export async function getDashboardStats(uid: string, role: string): Promise<Dash
     }
   }
 
-  const [bookings] = await query<any[]>('SELECT COUNT(*) AS c FROM bookings WHERE clientUID = ?', [uid])
-  const [hired] = await query<any[]>("SELECT COUNT(*) AS c FROM bookings WHERE clientUID = ? AND bookingStatus = 'Confirmed'", [uid])
-  const [done] = await query<any[]>("SELECT COUNT(*) AS c FROM bookings WHERE clientUID = ? AND (bookingStatus = 'Closed' OR jobStatus = 'completed')", [uid])
+  const [bookings] = await query<CountRow[]>('SELECT COUNT(*) AS c FROM bookings WHERE clientUID = ?', [uid])
+  const [hired] = await query<CountRow[]>("SELECT COUNT(*) AS c FROM bookings WHERE clientUID = ? AND bookingStatus = ?", [uid, 'Confirmed'])
+  const [done] = await query<CountRow[]>("SELECT COUNT(*) AS c FROM bookings WHERE clientUID = ? AND (bookingStatus = ? OR jobStatus = ?)", [uid, 'Closed', 'completed'])
   return {
     activeJobs: Number(bookings.c),
     applications: Number(bookings.c),
@@ -755,7 +771,7 @@ export async function getRecentActivity(uid: string, role: string): Promise<Acti
   const items: ActivityItem[] = []
 
   if (business) {
-    const rows = await query<any[]>(
+    const rows = await query<BookingActivityRow[]>(
       `SELECT b.*, u.fullName FROM bookings b
        LEFT JOIN users u ON b.clientUID = u.uid
        WHERE b.businessId = ? ORDER BY b.dateBooked DESC LIMIT 5`,
@@ -776,7 +792,7 @@ export async function getRecentActivity(uid: string, role: string): Promise<Acti
       })
     }
   } else {
-    const rows = await query<any[]>(
+    const rows = await query<BookingActivityRow[]>(
       `SELECT b.*, bs.businessName FROM bookings b
        LEFT JOIN businesses bs ON b.businessId = bs.businessId
        WHERE b.clientUID = ? ORDER BY b.dateBooked DESC LIMIT 5`,

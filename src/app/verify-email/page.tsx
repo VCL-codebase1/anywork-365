@@ -2,9 +2,10 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { sendVerificationEmail, reloadUser } from '@/lib/firebase/auth'
+import { getFirebaseAuth } from '@/lib/firebase/client'
 import { useCurrentUser } from '@/hooks/useCurrentUser'
 
 export default function VerifyEmailPage() {
@@ -14,6 +15,25 @@ export default function VerifyEmailPage() {
   const [checking, setChecking] = useState(false)
   const [error, setError] = useState('')
   const [polling, setPolling] = useState(true)
+
+  const refreshSessionAndRedirect = useCallback(async () => {
+    setPolling(false)
+    try {
+      const fbAuth = getFirebaseAuth()
+      const currentUser = fbAuth?.currentUser
+      if (currentUser) {
+        const freshToken = await currentUser.getIdToken(true)
+        await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken: freshToken }),
+        })
+      }
+    } catch {
+      // Session refresh is best-effort; dashboard will redirect back if it fails
+    }
+    router.push('/dashboard')
+  }, [router])
 
   useEffect(() => {
     if (!loading && !user) {
@@ -27,12 +47,11 @@ export default function VerifyEmailPage() {
     const interval = setInterval(async () => {
       const { emailVerified } = await reloadUser()
       if (emailVerified) {
-        setPolling(false)
-        router.push('/dashboard')
+        refreshSessionAndRedirect()
       }
     }, 3000)
     return () => clearInterval(interval)
-  }, [polling, router])
+  }, [polling, refreshSessionAndRedirect])
 
   async function handleResend() {
     setError('')
@@ -55,7 +74,7 @@ export default function VerifyEmailPage() {
       return
     }
     if (emailVerified) {
-      router.push('/dashboard')
+      refreshSessionAndRedirect()
     } else {
       setError('Email not verified yet. Please check your inbox and click the link.')
     }

@@ -12,6 +12,7 @@ import {
   createEscrow,
 } from '@/lib/queries'
 import type { ApiResponse } from '@/types'
+import type { RowDataPacket } from 'mysql2'
 
 export const runtime = 'nodejs'
 
@@ -66,7 +67,8 @@ export async function GET() {
   } else {
     const rows = await getBookingsByClient(session.id)
     const enriched = await Promise.all(rows.map(async (r) => {
-      const busRows = await query<any[]>('SELECT businessName FROM businesses WHERE businessId = ?', [r.businessId])
+      interface BusNameRow extends RowDataPacket { businessName: string }
+      const busRows = await query<BusNameRow[]>('SELECT businessName FROM businesses WHERE businessId = ?', [r.businessId])
       const businessName = busRows.length > 0 ? busRows[0].businessName : 'Vendor'
       return {
         id: r.bookingId,
